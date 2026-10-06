@@ -1,5 +1,5 @@
 ---
-- name: Deploy status application
+- name: Deploy status application with rollback
   hosts: app
   become: true
 
@@ -7,18 +7,77 @@
     status_app_tag: latest
 
   tasks:
-    - name: Pull application image
-      community.docker.docker_image:
-        name: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
-        source: pull
-        force_source: true
+    - name: Validate application image tag
+      ansible.builtin.assert:
+        that:
+          - status_app_tag is defined
+          - status_app_tag | length > 0
+        fail_msg: "status_app_tag must not be empty"
 
-    - name: Run status application container
-      community.docker.docker_container:
-        name: status-app
-        image: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
-        state: started
-        restart_policy: always
-        recreate: true
-        published_ports:
-          - "8080:80"
+    - name: Get current application image
+      ansible.builtin.shell: |
+        docker inspect status-app \
+        --format '{{ "{{" }}.Config.Image{{ "}}" }}' 2>/dev/null || true
+      register: current_image
+      changed_when: false
+
+    - name: Show current image
+      ansible.builtin.debug:
+        msg: "Current image is {{ current_image.stdout | default('none') }}"
+
+    - name: Deploy new application version
+      block:
+
+        - name: Pull application image
+          community.docker.docker_image:
+            name: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
+            source: pull
+            force_source: true
+
+        - name: Run status application container
+          community.docker.docker_container:
+            name: status-app
+            image: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
+            state: started
+            restart_policy: always
+            recreate: true
+            image_name_mismatch: recreate
+            published_ports:
+              - "8080:80"
+
+        - name: Wait for application port
+          ansible.builtin.wait_for:
+            host: 127.0.0.1
+            port: 8080
+            delay: 2
+            timeout: 30
+
+        - name: Check application health
+          ansible.builtin.uri:
+            url: http://127.0.0.1:8080
+            method: GET
+            status_code: 200
+          register: app_health
+          retries: 5
+          delay: 3
+          until: app_health.status == 200
+
+      rescue:
+
+        - name: Roll back to previous image
+          community.docker.docker_container:
+            name: status-app
+            image: "{{ current_image.stdout }}"
+            state: started
+            restart_policy: always
+            recreate: true
+            image_name_mismatch: recreate
+            published_ports:
+              - "8080:80"
+          when:
+            - current_image.stdout is defined
+            - current_image.stdout | length > 0
+
+        - name: Fail deployment after rollback
+          ansible.builtin.fail:
+            msg: "Deployment failed. Previous image was restored."
