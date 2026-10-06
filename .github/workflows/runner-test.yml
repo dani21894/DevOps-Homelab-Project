@@ -1,0 +1,27 @@
+name: Test Homelab Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+
+    steps:
+      - name: Show runner hostname
+        run: hostname
+
+      - name: Show current user
+        run: whoami
+
+      - name: Check Ansible
+        run: ansible --version
+
+      - name: Check homelab connectivity
+        run: |
+          ping -c 2 192.168.100.248
+          ping -c 2 192.168.100.247
+          ping -c 2 192.168.100.249
