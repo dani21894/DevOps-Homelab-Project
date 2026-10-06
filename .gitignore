@@ -1,0 +1,18 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+
+# Secrets
+.env
+*.key
+*.pem
+secrets/
+
+# Ansible
+*.retry
+
+# VS Code
+.vscode/
+

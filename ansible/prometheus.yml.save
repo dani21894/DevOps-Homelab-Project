@@ -1,0 +1,45 @@
+
+---
+
+- name: Deploy Prometheus
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Create Prometheus directory
+      ansible.builtin.file:
+        path: /opt/prometheus
+        state: directory
+        mode: '0755'
+
+    - name: Create Prometheus config
+      ansible.builtin.copy:
+        dest: /opt/prometheus/prometheus.yml
+        mode: '0644'
+        content: |
+          global:
+            scrape_interval: 15s
+
+          scrape_configs:
+            - job_name: 'node_exporter'
+              static_configs:
+                - targets:
+                    - '192.168.100.248:9100'
+                    - '192.168.100.247:9100'
+                    - '192.168.100.246:9100'
+                    - '192.168.100.249:9100'
+
+
+
+
+    - name: Run Prometheus container
+      community.docker.docker_container:
+        name: prometheus
+        image: prom/prometheus:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "9090:9090"
+        volumes:
+          - /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+

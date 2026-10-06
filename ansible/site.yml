@@ -1,0 +1,28 @@
+---
+- name: Configure all servers
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install common packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - htop
+          - ca-certificates
+          - gnupg
+        state: present
+
+    - name: Ensure QEMU Guest Agent is running
+      ansible.builtin.service:
+        name: qemu-guest-agent
+        state: started
+        enabled: true

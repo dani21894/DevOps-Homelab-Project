@@ -1,0 +1,36 @@
+---
+- name: Deploy Alertmanager
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Create Alertmanager directory
+      ansible.builtin.file:
+        path: /opt/alertmanager
+        state: directory
+        mode: '0755'
+
+    - name: Create Alertmanager config
+      ansible.builtin.copy:
+        dest: /opt/alertmanager/alertmanager.yml
+        mode: '0644'
+        content: |
+          global:
+            resolve_timeout: 5m
+
+          route:
+            receiver: 'default'
+
+          receivers:
+            - name: 'default'
+
+    - name: Run Alertmanager container
+      community.docker.docker_container:
+        name: alertmanager
+        image: prom/alertmanager:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "9093:9093"
+        volumes:
+          - /opt/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro

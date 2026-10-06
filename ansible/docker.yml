@@ -1,0 +1,25 @@
+---
+- name: Install Docker
+  hosts: app:proxy:monitoring
+  become: true
+
+  tasks:
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add devops user to docker group
+      ansible.builtin.user:
+        name: devops
+        groups: docker
+        append: true

@@ -1,0 +1,45 @@
+---
+- name: Deploy demo application
+  hosts: app
+  become: true
+
+  tasks:
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /opt/status-app
+        state: directory
+        mode: '0755'
+
+    - name: Create application page
+      ansible.builtin.copy:
+        dest: /opt/status-app/index.html
+        mode: '0644'
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>IT Service Status</title>
+          </head>
+          <body>
+              <h1>IT Service Status Platform</h1>
+              <p>Server: {{ inventory_hostname }}</p>
+
+              <ul>
+                  <li>Microsoft 365 - Operational</li>
+                  <li>VPN - Operational</li>
+                  <li>Authentication - Operational</li>
+                  <li>ServiceNow - Operational</li>
+              </ul>
+          </body>
+          </html>
+
+    - name: Run nginx container
+      community.docker.docker_container:
+        name: status-app
+        image: nginx:alpine
+        state: started
+        restart_policy: always
+        published_ports:
+          - "8080:80"
+        volumes:
+          - /opt/status-app/index.html:/usr/share/nginx/html/index.html:ro

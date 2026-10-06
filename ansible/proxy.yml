@@ -1,0 +1,57 @@
+---
+- name: Configure Nginx Load Balancer
+  hosts: proxy
+  become: true
+
+  tasks:
+    - name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Configure load balancer
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/status-app
+        mode: '0644'
+        content: |
+          upstream status_backend {
+              server 192.168.100.248:8080;
+              server 192.168.100.247:8080;
+          }
+
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://status_backend;
+
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+
+    - name: Remove default Nginx configuration
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Enable status application configuration
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/status-app
+        dest: /etc/nginx/sites-enabled/status-app
+        state: link
+
+    - name: Validate Nginx configuration
+      ansible.builtin.command:
+        cmd: nginx -t
+      changed_when: false
+
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: true

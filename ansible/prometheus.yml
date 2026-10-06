@@ -1,0 +1,76 @@
+---
+- name: Deploy Prometheus
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Create Prometheus directory
+      ansible.builtin.file:
+        path: /opt/prometheus
+        state: directory
+        mode: '0755'
+
+    - name: Create Prometheus configuration
+      ansible.builtin.copy:
+        dest: /opt/prometheus/prometheus.yml
+        mode: '0644'
+        content: |
+          global:
+            scrape_interval: 15s
+            evaluation_interval: 15s
+
+          rule_files:
+            - /etc/prometheus/alerts.yml
+
+          alerting:
+            alertmanagers:
+              - static_configs:
+                  - targets:
+                      - '192.168.100.246:9093'
+
+          scrape_configs:
+            - job_name: 'node_exporter'
+              static_configs:
+                - targets:
+                    - '192.168.100.248:9100'
+                  labels:
+                    server: 'app01'
+
+                - targets:
+                    - '192.168.100.247:9100'
+                  labels:
+                    server: 'app02'
+
+                - targets:
+                    - '192.168.100.246:9100'
+                  labels:
+                    server: 'monitor01'
+
+                - targets:
+                    - '192.168.100.249:9100'
+                  labels:
+                    server: 'proxy01'
+
+            - job_name: 'cadvisor'
+              static_configs:
+                - targets:
+                    - '192.168.100.248:8081'
+                  labels:
+                    server: 'app01'
+
+                - targets:
+                    - '192.168.100.247:8081'
+                  labels:
+                    server: 'app02'
+
+    - name: Run Prometheus container
+      community.docker.docker_container:
+        name: prometheus
+        image: prom/prometheus:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "9090:9090"
+        volumes:
+          - /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+          - /opt/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro

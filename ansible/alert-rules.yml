@@ -1,0 +1,50 @@
+---
+- name: Configure Prometheus alerts
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Create Prometheus alert rules
+      ansible.builtin.copy:
+        dest: /opt/prometheus/alerts.yml
+        mode: '0644'
+        content: |
+          groups:
+            - name: infrastructure-alerts
+              rules:
+
+                - alert: ServerDown
+                  expr: up{job="node_exporter"} == 0
+                  for: 1m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: "Server {{ '{{' }} $labels.instance {{ '}}' }} is down"
+                    description: "Node Exporter has been unreachable for more than 1 minute."
+
+                - alert: HighCPUUsage
+                  expr: |
+                    100 - (
+                      avg by(instance) (
+                        rate(node_cpu_seconds_total{mode="idle"}[5m])
+                      ) * 100
+                    ) > 80
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "High CPU usage on {{ '{{' }} $labels.instance {{ '}}' }}"
+
+                - alert: HighMemoryUsage
+                  expr: |
+                    (
+                      1 -
+                      node_memory_MemAvailable_bytes
+                      /
+                      node_memory_MemTotal_bytes
+                    ) * 100 > 90
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "High memory usage on {{ '{{' }} $labels.instance {{ '}}' }}"
