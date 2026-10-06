@@ -1,3 +1,5 @@
-FROM alpine:latest
+FROM nginx:alpine
 
-CMD ["sh", "-c", "exit 1"]
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
