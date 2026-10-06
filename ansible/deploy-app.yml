@@ -1,0 +1,24 @@
+---
+- name: Deploy status application
+  hosts: app
+  become: true
+
+  vars:
+    status_app_tag: latest
+
+  tasks:
+    - name: Pull application image
+      community.docker.docker_image:
+        name: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
+        source: pull
+        force_source: true
+
+    - name: Run status application container
+      community.docker.docker_container:
+        name: status-app
+        image: "ghcr.io/dani21894/status-app:{{ status_app_tag }}"
+        state: started
+        restart_policy: always
+        recreate: true
+        published_ports:
+          - "8080:80"
