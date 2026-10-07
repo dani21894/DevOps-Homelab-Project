@@ -1,0 +1,41 @@
+---
+- name: Backup important application and monitoring data
+  hosts: all
+  become: true
+
+  vars:
+    backup_root: /opt/backups
+
+  tasks:
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: "{{ backup_root }}"
+        state: directory
+        mode: '0755'
+
+- name: Backup monitoring configuration
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Archive Prometheus configuration
+      ansible.builtin.archive:
+        path:
+          - /opt/prometheus
+          - /opt/alertmanager
+          - /opt/grafana
+        dest: /opt/backups/monitoring-config.tar.gz
+        format: gz
+
+- name: Backup application configuration
+  hosts: app
+  become: true
+
+  tasks:
+    - name: Archive application directory if present
+      ansible.builtin.archive:
+        path:
+          - /opt/status-app
+        dest: /opt/backups/status-app.tar.gz
+        format: gz
+      ignore_errors: true

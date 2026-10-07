@@ -1,0 +1,23 @@
+---
+- name: Restore monitoring configuration
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Restore monitoring backup
+      ansible.builtin.unarchive:
+        src: /opt/backups/monitoring-config.tar.gz
+        dest: /
+        remote_src: true
+
+- name: Restore application configuration
+  hosts: app
+  become: true
+
+  tasks:
+    - name: Restore application backup
+      ansible.builtin.unarchive:
+        src: /opt/backups/status-app.tar.gz
+        dest: /
+        remote_src: true
+      ignore_errors: true
