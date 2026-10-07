@@ -24,4 +24,4 @@
           - /opt/grafana:/var/lib/grafana
         env:
           GF_SECURITY_ADMIN_USER: admin
-          GF_SECURITY_ADMIN_PASSWORD: admin
+          GF_SECURITY_ADMIN_PASSWORD: "{{ vault_grafana_admin_password }}"
