@@ -658,3 +658,27 @@ The purpose of this project is to build a realistic DevOps environment that demo
 Rather than focusing on a single DevOps tool, the project demonstrates how multiple technologies work together as part of an end-to-end platform.
 
 The project is designed to provide practical hands-on experience and serve as a technical portfolio project for DevOps and infrastructure engineering roles.
+
+## Lessons Learned
+
+During development and disaster-recovery testing, several real-world issues were encountered and resolved:
+
+- DHCP caused rebuilt virtual machines to receive different IP addresses.
+  - Resolved by implementing static IP configuration through Terraform and Cloud-Init.
+
+- Recreated virtual machines generated new SSH host keys.
+  - Old entries in `known_hosts` had to be removed before reconnecting.
+
+- Rebuilt application nodes initially lacked the Ansible SSH key.
+  - Terraform was updated to automatically inject the Ansible public key.
+
+- Prometheus failed after infrastructure recreation because `alerts.yml` was accidentally created as a directory by a Docker bind mount.
+  - The alert rules deployment order was corrected and the Prometheus container was recreated.
+
+- Trivy detected HIGH vulnerabilities in the application container.
+  - The vulnerable Alpine packages were upgraded before allowing deployment to continue.
+
+- Monitoring services needed to be redeployed after VM recreation.
+  - Ansible playbooks were used to restore Prometheus, Grafana, Alertmanager, Node Exporter, and application services.
+
+These issues helped improve the automation and made the environment more reproducible and resilient.
