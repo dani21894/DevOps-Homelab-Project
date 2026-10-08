@@ -4,18 +4,54 @@ A production-style DevOps homelab running on Proxmox, designed to demonstrate In
 
 ## Architecture
 
-- Proxmox VE
-- Terraform
-- Ansible
-- Docker
-- Nginx
-- Prometheus
-- Grafana
-- Alertmanager
-- cAdvisor
-- GitHub Actions
-- Trivy
-- Ansible Vault
+```mermaid
+flowchart TD
+    DEV[Developer] --> GH[GitHub Repository]
+    GH --> GHA[GitHub Actions]
+
+    GHA --> TRIVY[Trivy Security Scan]
+    TRIVY --> RUNNER[Self-Hosted Runner on control01]
+
+    RUNNER --> TF[Terraform]
+    RUNNER --> ANS[Ansible]
+
+    TF --> PVE[Proxmox VE]
+
+    PVE --> APP1[app01<br/>192.168.100.248]
+    PVE --> APP2[app02<br/>192.168.100.247]
+    PVE --> PROXY[proxy01<br/>192.168.100.249]
+    PVE --> MON[monitor01<br/>192.168.100.246]
+
+    ANS --> APP1
+    ANS --> APP2
+    ANS --> PROXY
+    ANS --> MON
+
+    USER[User / Browser] --> PROXY
+
+    PROXY --> APP1
+    PROXY --> APP2
+
+    APP1 --> CAD1[cAdvisor]
+    APP2 --> CAD2[cAdvisor]
+
+    MON --> PROM[Prometheus]
+    MON --> GRAF[Grafana]
+    MON --> ALERT[Alertmanager]
+
+    PROM --> APP1
+    PROM --> APP2
+    PROM --> PROXY
+    PROM --> MON
+    PROM --> CAD1
+    PROM --> CAD2
+
+    PROM --> ALERT
+    GRAF --> PROM
+
+    GHCR[GitHub Container Registry] --> APP1
+    GHCR --> APP2
+```
 
 ## Infrastructure
 
