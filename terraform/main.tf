@@ -28,8 +28,17 @@ resource "proxmox_virtual_environment_vm" "app01" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "192.168.100.248/24"
+        gateway = "192.168.100.1"
       }
+    }
+
+    user_account {
+      username = "devops"
+
+      keys = [
+        trimspace(file("/home/devops/.ssh/ansible_ed25519.pub"))
+      ]
     }
   }
 
@@ -41,6 +50,7 @@ resource "proxmox_virtual_environment_vm" "app01" {
     type = "l26"
   }
 }
+
 
 resource "proxmox_virtual_environment_vm" "app02" {
   name      = "app02"
@@ -72,8 +82,17 @@ resource "proxmox_virtual_environment_vm" "app02" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "192.168.100.247/24"
+        gateway = "192.168.100.1"
       }
+    }
+
+    user_account {
+      username = "devops"
+
+      keys = [
+        trimspace(file("/home/devops/.ssh/ansible_ed25519.pub"))
+      ]
     }
   }
 
@@ -86,10 +105,11 @@ resource "proxmox_virtual_environment_vm" "app02" {
   }
 }
 
+
 resource "proxmox_virtual_environment_vm" "monitor01" {
   name      = "monitor01"
   node_name = "pve"
-  vm_id     = 120
+  vm_id     = 113
 
   clone {
     vm_id        = 9000
@@ -116,8 +136,17 @@ resource "proxmox_virtual_environment_vm" "monitor01" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "192.168.100.246/24"
+        gateway = "192.168.100.1"
       }
+    }
+
+    user_account {
+      username = "devops"
+
+      keys = [
+        trimspace(file("/home/devops/.ssh/ansible_ed25519.pub"))
+      ]
     }
   }
 
@@ -130,10 +159,11 @@ resource "proxmox_virtual_environment_vm" "monitor01" {
   }
 }
 
+
 resource "proxmox_virtual_environment_vm" "proxy01" {
   name      = "proxy01"
   node_name = "pve"
-  vm_id     = 130
+  vm_id     = 114
 
   clone {
     vm_id        = 9000
@@ -160,8 +190,17 @@ resource "proxmox_virtual_environment_vm" "proxy01" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "192.168.100.249/24"
+        gateway = "192.168.100.1"
       }
+    }
+
+    user_account {
+      username = "devops"
+
+      keys = [
+        trimspace(file("/home/devops/.ssh/ansible_ed25519.pub"))
+      ]
     }
   }
 

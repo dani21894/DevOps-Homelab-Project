@@ -79,6 +79,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create Ansible Vault password file
+        run: |
+          printf '%s' "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > "$RUNNER_TEMP/.vault_pass"
+          chmod 600 "$RUNNER_TEMP/.vault_pass"
+
       - name: Test Ansible connectivity
         run: |
           ansible all \
@@ -92,9 +97,20 @@ jobs:
             ansible/deploy-app.yml \
             -e status_app_tag=${{ github.sha }}
 
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook \
+            -i ansible/inventory/hosts.ini \
+            ansible/grafana.yml \
+            --vault-password-file "$RUNNER_TEMP/.vault_pass"
+
       - name: Verify application
         run: |
           curl --fail \
             --retry 5 \
             --retry-delay 5 \
             http://192.168.100.249
+
+      - name: Remove Vault password file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/.vault_pass"
